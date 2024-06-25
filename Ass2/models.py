@@ -39,7 +39,7 @@ class Class(models.Model): #Class Model
     students = models.ManyToManyField('Student', through='StudentEnrolment')#through指定关系的表名
 
     def __str__(self):
-        return self.number + self.course.name #返回的结果就是 luoluo， 但是如果我们使用return f"{self.number} - {self.course.name}"，就会返回 luoluo - Computer Science.我们这样的话就可以在里面自定义展示内容
+        return self.number #返回的结果就是 luoluo， 但是如果我们使用return f"{self.number} - {self.course.name}"，就会返回 luoluo - Computer Science.我们这样的话就可以在里面自定义展示内容
 
 class Student(models.Model): #Student Model
     firstName = models.CharField(max_length=100)
@@ -49,7 +49,7 @@ class Student(models.Model): #Student Model
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return self.firstName + self.email
+        return self.firstName + self.lastName
 
 
 class StudentEnrolment(models.Model): #Student Enrolment Model
@@ -58,3 +58,6 @@ class StudentEnrolment(models.Model): #Student Enrolment Model
     grade = models.IntegerField(blank=True, null=True)
     enrolTime = models.DateTimeField(auto_now_add=True) #auto_now_add=True 在创建的时候自动添加
     gradeTime = models.DateTimeField(auto_now=True,blank=True, null=True) #auto_now=True 在修改的时候自动修改
+
+    def __str__(self):
+        return self.student.firstName + self.student.lastName

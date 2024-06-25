@@ -18,10 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
 
+from Ass2.views import User_logout
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('Ass2/', include('Ass2.urls')), #这一步得在migration后使用
-    path('auth/',obtain_auth_token) #这里的obtain_auth_token十分重要，它相当于是用户是否登陆成功，是否有账号。如果账号和密码都正确，就会给我们发送一个token。
+    path('auth/',obtain_auth_token), #这里的obtain_auth_token十分重要，它相当于是用户是否登陆成功，是否有账号。如果账号和密码都正确，就会给我们发送一个token。
     #用户在输入账号和密码后，django会在user类里面进行筛查，验证这个账号和密码。成功则给我们发送token。
     #使用 Token 是为了实现无状态的用户认证。Token 是一种认证机制，常用于 RESTful API 中。通过 Token，可以确保每个请求都带有用户的身份信息，从而不需要在每个请求中重新进行用户名和密码的认证。
+    path('auth/logout/', User_logout),
 ]

@@ -25,6 +25,7 @@ router.register('lecturers',viewset=views.LecturerViewSet, basename='lecturers')
 router.register('classes',viewset=views.ClassViewSet, basename='classes')
 router.register('enrollments',viewset=views.StudentEnrollmentViewSet, basename='enrollments')
 router.register('users',viewset=views.UserViewSet, basename='users') #给用户增删改查
+# router.register('grades',viewset=views.StudentGradeViewSet, basename='grades')
 
 urlpatterns = [
     #url模式，视图，别名（可选）

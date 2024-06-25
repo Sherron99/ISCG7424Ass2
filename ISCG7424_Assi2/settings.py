@@ -40,9 +40,11 @@ INSTALLED_APPS = [
     'Ass2',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders' #这一步可以让我们在postman登陆获得token
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', #这一步可以让我们在postman登陆账号密码获得token
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -74,11 +76,12 @@ TEMPLATES = [
 #下面这个REST_FRAMEWORK是十分重要的，可以确保我们是否能够登陆。我们在postman就可以验证（只需要创建authorization，输入Token 密匙）就可以看到内容，否则不可以
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+         'rest_framework.authentication.SessionAuthentication',
+         'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.permissions.AllowAny'
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+         'rest_framework.permissions.IsAuthenticated',
     ),
 }
 
@@ -136,3 +139,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CORS_ALLOW_ALL_ORIGINS = True  # If this is used then CORS_ALLOWED_ORIGINS will not have any effect
+CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:3000/',
+#     # "https://web-assignment-2-react.vercel.app/",
+# ]  # If this is used, then not need to use CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOWED_ORIGIN_REGEXES = [
+#     'http://localhost:3000/',
+# ]

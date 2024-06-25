@@ -1,14 +1,18 @@
+from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.shortcuts import render
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from rest_framework.decorators import api_view, authentication_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from Ass2 import serializers
 from Ass2.models import Semester, Course, StudentEnrolment, Student, Lecturer,Class
+from Ass2.permissions import IsAuthorOrReadOnly, IsLecturer, IsStudent
 from Ass2.serializers import CourseSerializer, ClassSerializer, StudentEnrollmentSerializer, \
-    StudentSerializer, LecturerSerializer, SemesterSerializer, UserSerializer
+    StudentSerializer, LecturerSerializer, UserSerializer, SemesterReadSerializer, \
+    SemesterCreateSerializer
 
 
 # Create your views here.
@@ -40,35 +44,94 @@ from Ass2.serializers import CourseSerializer, ClassSerializer, StudentEnrollmen
 
 
 class SemesterViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = (TokenAuthentication,)
     queryset = Semester.objects.all()
-    serializer_class = SemesterSerializer
+    # permission_classes = (IsAuthorOrReadOnly,) #你只有是你创建的你才可以update和delete
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']: #list是用于处理get所有实例的请求，retrieve是用于处理get单个实例的请求
+            return SemesterReadSerializer
+        return SemesterCreateSerializer
 
     #我们的create是需要有responese的
-    def create(self, request, *args, **kwargs):
-        serializer = SemesterSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-        else:
-            return Response(serializer.errors)
-        return Response(serializer.data)
+    #这串代码有问题，framework不支持可写的嵌套字段
+    # def create(self, request, *args, **kwargs):
+    #     serializer = SemesterSerializer(data=request.data)
+    #     if serializer.is_valid(raise_exception=True):
+    #         serializer.save()
+    #     else:
+    #         return Response(serializer.errors)
+    #     return Response(serializer.data)
+    #
+    # def update(self, request, *args, **kwargs):
+    #     serializer = SemesterSerializer(data=request.data)
+    #     if serializer.is_valid(): #this one is always required, otherwise you cannot see any errors
+    #         super().update(request, *args, **kwargs)
+    #         instance = self.get_object()
+    #     else:
+    #         return Response(serializer.errors)
+    #     serializer = SemesterSerializer(instance = instance)
+    #     return Response(serializer.data)
+
 
 class CourseViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = (TokenAuthentication,)
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    # authentication_classes = ([TokenAuthentication, ])
+    # permission_classes = [IsAuthenticated, IsAuthor]
 
 class ClassViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = (TokenAuthentication,)
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
 
 class StudentEnrollmentViewSet(viewsets.ModelViewSet):
-    queryset = StudentEnrolment.objects.all()
+    authentication_classes = (TokenAuthentication,)
     serializer_class = StudentEnrollmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            try:
+                lecturer = Lecturer.objects.get(user=user)
+                # 获取讲师教授的所有班级
+                classes = Class.objects.filter(lecturer=lecturer)
+                # 返回这些班级中的所有学生注册信息
+                return StudentEnrolment.objects.filter(Class__in=classes)
+            except Lecturer.DoesNotExist:
+                try:
+                    student = Student.objects.get(user=user)
+                    return StudentEnrolment.objects.filter(student=student)
+                except Student.DoesNotExist:
+                    return StudentEnrolment.objects.none()
+        return StudentEnrolment.objects.none()
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        try:
+            lecturer = Lecturer.objects.get(user=user)
+            # 只有讲师才能更新成绩
+            return super().update(request, *args, **kwargs)
+        except Lecturer.DoesNotExist:
+            return Response({"detail": "You don't have permission to perform this action."}, status=403)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 class StudentViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = (TokenAuthentication,)
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
 
 class LecturerViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = (TokenAuthentication,)
     queryset = Lecturer.objects.all()
     serializer_class = LecturerSerializer
 
@@ -76,6 +139,7 @@ class LecturerViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (AllowAny,)
 
 #下面是根据lei视频添加
 @api_view(['GET'])
@@ -87,3 +151,31 @@ def get_user_id(request):
     # print(f"User Username: {user.username}")
     serializer = UserSerializer(instance=user)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([TokenAuthentication])
+def User_logout(request):
+    request.user.auth_token.delete()
+    logout(request)
+    return Response("User logged out successfully")
+
+# class StudentGradeViewSet(viewsets.ViewSet):
+#
+#     # permission_classes = [IsAuthenticated, IsStudent]
+#     # authentication_classes = (TokenAuthentication,)
+#     def list(self, request):
+#         user_groups = request.user.groups.values_list('name', flat=True)
+#         if 'Student' in user_groups:
+#             email = request.user.username
+#             student = Student.objects.get(email=email)
+#             enrollments = StudentEnrolment.objects.filter(student=student)
+#             # enrollments = student.enrollments.all()
+#             serializer = StudentEnrollmentSerializer(enrollments, many=True)
+#             return Response(serializer.data)
+#
+#         return Response(status=404)
+
+
+
+
