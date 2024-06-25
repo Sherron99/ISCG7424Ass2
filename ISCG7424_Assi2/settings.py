@@ -86,7 +86,7 @@ REST_FRAMEWORK = {
 }
 
 # WSGI_APPLICATION = 'ISCG7424_Assi2.wsgi.application'
-WSGI_APPLICATION = 'ISCG7424_Assi2.wsgi.app'
+WSGI_APPLICATION = 'ISCG7424_Assi2.wsgi.app'  #这一步更改了
 
 
 # Database
@@ -98,6 +98,8 @@ WSGI_APPLICATION = 'ISCG7424_Assi2.wsgi.app'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+
+#这一步更改了
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
