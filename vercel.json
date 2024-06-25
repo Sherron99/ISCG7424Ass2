@@ -1,0 +1,24 @@
+{
+  "framework": null,
+  "builds": [
+    {
+      "src": "ISCG7424_Assi2/wsgi.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize":  "15mb", "runtime":  "python3.9" }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "ISCG7424_Assi2/wsgi.py",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE, PUT"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "ISCG7424_Assi2/wsgi.py"
+    }
+  ]
+}
