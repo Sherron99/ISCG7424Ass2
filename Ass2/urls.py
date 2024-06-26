@@ -30,7 +30,6 @@ router.register('users',viewset=views.UserViewSet, basename='users') #给用户�
 urlpatterns = [
     #url模式，视图，别名（可选）
     path("get_user_id/", get_user_id, name="get_user_id"), #我们在这里又添加了一个获取用户id根据lei的视频
-    path('students/batch', views.batch_create_users_and_students, name='batch_create_users_and_students'),
     path('', include(router.urls))
      #这里的 '' 是一个空字符串，表示 URL 路径没有额外的前缀
     #由于前缀是空字符串，因此所有由 router 生成的路径都将直接在根路径下可用

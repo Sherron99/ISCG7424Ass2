@@ -1,14 +1,14 @@
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from Ass2 import serializers
-from Ass2.models import Semester, Course, StudentEnrolment, Student, Lecturer, Class
+from Ass2.models import Semester, Course, StudentEnrolment, Student, Lecturer,Class
 from Ass2.permissions import IsAuthorOrReadOnly, IsLecturer, IsStudent
 from Ass2.serializers import CourseSerializer, ClassSerializer, StudentEnrollmentSerializer, \
     StudentSerializer, LecturerSerializer, UserSerializer, SemesterReadSerializer, \
@@ -16,7 +16,7 @@ from Ass2.serializers import CourseSerializer, ClassSerializer, StudentEnrollmen
 
 
 # Create your views here.
-# 就是我们将要展示的内容，它的def后的名称就是urls里跳转的名称。
+#就是我们将要展示的内容，它的def后的名称就是urls里跳转的名称。
 
 # 视图的交互流程
 # 客户端请求（用户交互）：
@@ -36,27 +36,26 @@ from Ass2.serializers import CourseSerializer, ClassSerializer, StudentEnrollmen
 # ViewSet将处理结果序列化为JSON，并返回给客户端。
 # 浏览器接收响应并更新用户界面。
 
-# viewset 是对资源的增删改查（CRUD）操作
+#viewset 是对资源的增删改查（CRUD）操作
 
 
-# 使用 viewsets.ModelViewSet 可以同时处理一个模型的增、删、改、查操作。这是因为 ModelViewSet 包含了 Django REST framework 的所有
-# 通用视图（RetrieveModelMixin、ListModelMixin、CreateModelMixin、UpdateModelMixin 和 DestroyModelMixin）。
+#使用 viewsets.ModelViewSet 可以同时处理一个模型的增、删、改、查操作。这是因为 ModelViewSet 包含了 Django REST framework 的所有
+#通用视图（RetrieveModelMixin、ListModelMixin、CreateModelMixin、UpdateModelMixin 和 DestroyModelMixin）。
 
 
 class SemesterViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     authentication_classes = (TokenAuthentication,)
     queryset = Semester.objects.all()
-
     # permission_classes = (IsAuthorOrReadOnly,) #你只有是你创建的你才可以update和delete
 
     def get_serializer_class(self):
-        if self.action in ['list', 'retrieve']:  # list是用于处理get所有实例的请求，retrieve是用于处理get单个实例的请求
+        if self.action in ['list', 'retrieve']: #list是用于处理get所有实例的请求，retrieve是用于处理get单个实例的请求
             return SemesterReadSerializer
         return SemesterCreateSerializer
 
-    # 我们的create是需要有responese的
-    # 这串代码有问题，framework不支持可写的嵌套字段
+    #我们的create是需要有responese的
+    #这串代码有问题，framework不支持可写的嵌套字段
     # def create(self, request, *args, **kwargs):
     #     serializer = SemesterSerializer(data=request.data)
     #     if serializer.is_valid(raise_exception=True):
@@ -84,13 +83,11 @@ class CourseViewSet(viewsets.ModelViewSet):
     # authentication_classes = ([TokenAuthentication, ])
     # permission_classes = [IsAuthenticated, IsAuthor]
 
-
 class ClassViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     authentication_classes = (TokenAuthentication,)
     queryset = Class.objects.all()
     serializer_class = ClassSerializer
-
 
 class StudentEnrollmentViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
@@ -126,13 +123,11 @@ class StudentEnrollmentViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
-
 class StudentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     authentication_classes = (TokenAuthentication,)
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-
 
 class LecturerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -146,10 +141,9 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (AllowAny,)
 
-
-# 下面是根据lei视频添加
+#下面是根据lei视频添加
 @api_view(['GET'])
-@authentication_classes([SessionAuthentication, TokenAuthentication])
+@authentication_classes([SessionAuthentication,TokenAuthentication])
 def get_user_id(request):
     user = request.user
     # print(f"User object: {user}")
@@ -158,7 +152,6 @@ def get_user_id(request):
     serializer = UserSerializer(instance=user)
     return Response(serializer.data)
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @authentication_classes([TokenAuthentication])
@@ -166,44 +159,6 @@ def User_logout(request):
     request.user.auth_token.delete()
     logout(request)
     return Response("User logged out successfully")
-
-
-@api_view(['POST'])
-def batch_create_users_and_students(request):
-    if not isinstance(request.data, list):
-        return Response({"error": "Expected a list of data"}, status=status.HTTP_400_BAD_REQUEST)
-
-    user_data_list = []
-    student_data_list = []
-
-    for item in request.data:
-        user_data = {
-            'username': item.get('username'),
-            'first_name': item.get('first_name'),
-            'last_name': item.get('last_name'),
-            'email': item.get('email'),
-            'password': item.get('password'),  # 确保提供了密码
-        }
-        user_data_list.append(user_data)
-
-    user_serializer = UserSerializer(data=user_data_list, many=True)
-    if user_serializer.is_valid():
-        users = user_serializer.save()
-        for user in users:
-            student_data = {
-                'user': user.id,
-                'other_student_fields': item.get('other_student_fields'),  # 替换为实际的学生字段
-            }
-            student_data_list.append(student_data)
-
-        student_serializer = StudentSerializer(data=student_data_list, many=True)
-        if student_serializer.is_valid():
-            student_serializer.save()
-            return Response({"message": "Users and students created successfully"}, status=status.HTTP_201_CREATED)
-        else:
-            return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # class StudentGradeViewSet(viewsets.ViewSet):
 #
@@ -220,3 +175,7 @@ def batch_create_users_and_students(request):
 #             return Response(serializer.data)
 #
 #         return Response(status=404)
+
+
+
+
